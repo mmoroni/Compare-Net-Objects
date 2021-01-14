@@ -97,6 +97,37 @@ namespace KellermanSoftware.CompareNetObjectsTests
         }
 
         [Test]
+        public void IgnoreOrderListOfComplexTypeWithNestedComplexType()
+        {
+            CompareLogic compareLogic = new CompareLogic();
+            compareLogic.Config.IgnoreCollectionOrder = true;
+
+            var obj1 = new List<ComplexType> {
+                new ComplexType {Item = new Item {Value = "20"}},
+                new ComplexType {Item = new Item {Value = "21"}}
+            };
+            var obj2 = new List<ComplexType>
+            {
+                new ComplexType {Item = new Item {Value = "20"}},
+                new ComplexType {Item = new Item {Value = "20"}}
+            };
+            
+            var result = compareLogic.Compare(obj1, obj2);
+            Console.WriteLine(result.DifferencesString);
+            Assert.IsFalse(result.AreEqual);
+        }
+
+        public class ComplexType 
+        {
+            public Item Item { get; set; }
+        }
+
+        public class Item
+        {
+            public string Value { get; set; }
+        }
+
+        [Test]
         public void IgnoredMemberGetPropertyAccessed()
         {
             //This is the comparison class
@@ -248,7 +279,7 @@ namespace KellermanSoftware.CompareNetObjectsTests
             string result = friendlyReport.OutputString(assertionResult.Differences);
             Console.WriteLine(result);
 
-            Assert.IsTrue(result.Contains("[{ boo = -5, gg = 9 }]"));
+            Assert.IsTrue(result.Contains("[{ boo = -5, gg = 9 }[1]]"));
         }
 
         [Test]

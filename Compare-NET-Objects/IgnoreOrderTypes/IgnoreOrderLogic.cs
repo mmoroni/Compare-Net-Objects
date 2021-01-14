@@ -78,6 +78,7 @@ namespace KellermanSoftware.CompareNetObjects.IgnoreOrderTypes
                 enumerator2 = ((IEnumerable)parms.Object1).GetEnumerator();
             }
 
+            int i = 0;
             while (enumerator1.MoveNext())
             {
                 var data = enumerator1.Current;
@@ -89,7 +90,7 @@ namespace KellermanSoftware.CompareNetObjects.IgnoreOrderTypes
 
                 dataType1 = dataType1 ?? data?.GetType() ?? fallbackType1;
                 matchingSpec1 = matchingSpec1 ?? GetMatchingSpec(parms.Result, dataType1);
-                var matchingIndex = GetMatchIndex(parms.Result, matchingSpec1, data);
+                var matchingIndex = GetMatchIndex(parms.Result, matchingSpec1, data, i++);
                 if (!list1.ContainsKey(matchingIndex))
                     list1.Add(matchingIndex, new InstanceCounter(data, 1));
                 else
@@ -98,6 +99,7 @@ namespace KellermanSoftware.CompareNetObjects.IgnoreOrderTypes
                 list1Count++;
             }
 
+            i = 0;
             while (enumerator2.MoveNext())
             {
                 var data = enumerator2.Current;
@@ -109,7 +111,7 @@ namespace KellermanSoftware.CompareNetObjects.IgnoreOrderTypes
 
                 dataType2 = dataType2 ?? data?.GetType() ?? fallbackType2;
                 matchingSpec2 = matchingSpec2 ?? GetMatchingSpec(parms.Result, dataType2);
-                var matchingIndex = GetMatchIndex(parms.Result, matchingSpec2, data);
+                var matchingIndex = GetMatchIndex(parms.Result, matchingSpec2, data, i++);
                 if (!list2.ContainsKey(matchingIndex))
                     list2.Add(matchingIndex, new InstanceCounter(data, 1));
                 else
@@ -218,7 +220,7 @@ namespace KellermanSoftware.CompareNetObjects.IgnoreOrderTypes
             }
         }
 
-        private string GetMatchIndex(ComparisonResult result, List<string> spec, object currentObject)
+        private string GetMatchIndex(ComparisonResult result, List<string> spec, object currentObject, int i)
         {
             if (currentObject == null)
                 return "(null)";
@@ -261,12 +263,12 @@ namespace KellermanSoftware.CompareNetObjects.IgnoreOrderTypes
             }
 
             if (sb.Length == 0)
-                sb.Append(RespectNumberToString(currentObject));
+                sb.Append(RespectNumberToString(currentObject, i));
 
             return sb.ToString().TrimEnd(',');
         }
 
-        private static string RespectNumberToString(object o)
+        private static string RespectNumberToString(object o, int i)
         {
 
 #if NETSTANDARD
@@ -281,7 +283,10 @@ namespace KellermanSoftware.CompareNetObjects.IgnoreOrderTypes
                 case "Single":
                     return ((float)o).ToString("G");
                 default:
-                    return o.ToString();
+                    if (TypeHelper.IsSimpleType(o.GetType()) || TypeHelper.IsEnum(o.GetType()))
+                        return o.ToString();
+                    else 
+                        return $"{o}[{i}]";
             }
 #else
             switch (Type.GetTypeCode(o.GetType()))
@@ -293,7 +298,10 @@ namespace KellermanSoftware.CompareNetObjects.IgnoreOrderTypes
                 case TypeCode.Single:
                     return ((float)o).ToString("G");
                 default:
-                    return o.ToString();
+                    if (TypeHelper.IsSimpleType(o.GetType()) || TypeHelper.IsEnum(o.GetType()))
+                        return o.ToString();
+                    else 
+                        return $"{o}[{i}]";
             }
 #endif
         }
